@@ -11,19 +11,13 @@ game 'gta5'
 
 description 'YUPPz WORKSHOP CFX'
 
-server_scripts {
-	'@oxmysql/lib/MySQL.lua',
-	'@es_extended/locale.lua',
-	'config.lua',
-	'server/server.lua'
-}
 
 client_scripts {
-	'@es_extended/locale.lua',
-	'config.lua',
-	'client/client.lua'
+	"config.lua",
+    "client/client.lua"
 }
 
-dependencies {
-	'es_extended',
+server_scripts {
+    "config.lua",
+    "server/server.lua"
 }

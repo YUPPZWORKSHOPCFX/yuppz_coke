@@ -6,68 +6,59 @@
 --= You are not allowed to sell this script or edit
 --============================================================
 
-local spawnedCoke = 0
-local cokePlants = {}
-yuppz  = GetCurrentResourceName()
-local isPickingUp, isProcessing = false, false
+local spawnedcoke1 = 0
+local spawnedcoke2 = 0
+local coke1 = {}
+local coke2 = {}
+local isPickingUp1, isPickingUp2, IsProcessing, IsOpenMenu = false, false, false, false
+ObjectLists = 0
+ObjectArray = {}
 
-Citizen.CreateThread(function()
-	Citizen.Wait(1000)
-	print("^2 YUPPZWORKSHOP : Actived ! | Supports!^1")
-    print("^2 DISCORD : ^2https://discord.gg/KhnrE48Nfd")
-end)
+ESX = nil
 
 Citizen.CreateThread(function()
 	while ESX == nil do
 		TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-		Citizen.Wait(10000)
+		Citizen.Wait(0)
 	end
 
-	while ESX.GetPlayerData().job == nil do
-		Citizen.Wait(10000)
-	end
-
-	ESX.PlayerData = ESX.GetPlayerData()
-end)
-
-Citizen.CreateThread(function()
-	for k,zone in pairs(Config.CircleZones) do
-	end
+	Citizen.Wait(5000)
 end)
 
 
+-- Spawn Object
 Citizen.CreateThread(function()
 	while true do
 		Citizen.Wait(10)
 		local coords = GetEntityCoords(PlayerPedId())
-		
-		if GetDistanceBetweenCoords(coords, Config.CircleZones.CokeField.coords, true) < 50 then
-			SpawnCoke()
-			Citizen.Wait(1000)
+
+		if GetDistanceBetweenCoords(coords, Config.CircleZones.Zone1.coords, true) < 50 then
+			Spawncoke1()
+			Citizen.Wait(500)
 		else
-			Citizen.Wait(1000)
+			Citizen.Wait(500)
 		end
+
 	end
 end)
-
-RegisterNetEvent(yuppz..'AlertNotification')
-AddEventHandler(yuppz..'AlertNotification', function()
+RegisterNetEvent('yuppz_coke:pickedUpCoke')
+AddEventHandler('yuppz_coke:pickedUpCoke', function()
 	local playerPed = PlayerPedId()
 	local coords = GetEntityCoords(playerPed)
-	local nearbyObject, nearbyID
-	isPickingUp = true
-	for i=1, #cokePlants, 1 do
-		if GetDistanceBetweenCoords(coords, GetEntityCoords(cokePlants[i]), false) < 1 then
-			nearbyObject, nearbyID = cokePlants[i], i
+	local nearbyObject1, nearbyID1
+	isPickingUp1 = true
+	for i=1, #coke1, 1 do
+		if GetDistanceBetweenCoords(coords, GetEntityCoords(coke1[i]), false) < 1 then
+			nearbyObject1, nearbyID1 = coke1[i], i
 		end
 	end
-	TaskStartScenarioInPlace(playerPed, 'CODE_HUMAN_MEDIC_TEND_TO_DEAD', 0, false)
+	TaskStartScenarioInPlace(playerPed, 'world_human_gardener_plant', 0, false)
 	Citizen.Wait(Config.Time)
 	ClearPedTasks(playerPed)
-	ESX.Game.DeleteObject(nearbyObject)
-	table.remove(cokePlants, nearbyID)
-	spawnedCoke = spawnedCoke - 1
-	isPickingUp = false
+	ESX.Game.DeleteObject(nearbyObject1)
+	table.remove(coke1, nearbyID1)
+	spawnedcoke1 = spawnedcoke1 - 1
+	isPickingUp1 = false
 end)
 
 Citizen.CreateThread(function()
@@ -76,25 +67,23 @@ Citizen.CreateThread(function()
 		local letSleep = true
 		local playerPed = PlayerPedId()
 		local coords = GetEntityCoords(playerPed)
-		local nearbyObject, nearbyID
+		local nearbyObject1, nearbyID1
 
-		for i=1, #cokePlants, 1 do
-			if GetDistanceBetweenCoords(coords, GetEntityCoords(cokePlants[i]), false) < 1 then
-				nearbyObject, nearbyID = cokePlants[i], i
+		for i=1, #coke1, 1 do
+			if GetDistanceBetweenCoords(coords, GetEntityCoords(coke1[i]), false) < 1 then
+				nearbyObject1, nearbyID1 = coke1[i], i
 			end
 		end
 
-		if nearbyObject and IsPedOnFoot(playerPed) then
-
-			if not isPickingUp then
+		if nearbyObject1 and IsPedOnFoot(playerPed) then
+			if not isPickingUp1 then
 				letSleep = false
 				NOTIFYPREE()
 			end
-
-			if IsControlJustReleased(0,38) and not isPickingUp then
+			if IsControlJustReleased(0,38) and not isPickingUp1 then
 				progressbar(source)
 				if exports.yuppz_check:CheckPolice(Config.Cops) then
-					TriggerServerEvent(yuppz..'pickedUpCoke')
+					TriggerServerEvent('yuppz_coke:canpickedUp')
 				else
 					TriggerEvent("pNotify:SendNotification", 
 					{text = " ต้องการตำรวจจำนวน "..Config.Cops.." ในเมือง",
@@ -102,13 +91,17 @@ Citizen.CreateThread(function()
 					layout = "centerLeft"})
 					Wait(5000)
 				end
+				
 			end
+
 		else
 			if letSleep then 
 				Citizen.Wait(500)
 			end
 		end
+
 	end
+
 end)
 
 function progressbar(source)
@@ -127,86 +120,88 @@ function progressbar(source)
 	})
 end
 
+
 AddEventHandler('onResourceStop', function(resource)
 	if resource == GetCurrentResourceName() then
-		for k, v in pairs(cokePlants) do
+		for k, v in pairs(coke1) do
+			ESX.Game.DeleteObject(v)
+		end
+		for k, v in pairs(coke2) do
 			ESX.Game.DeleteObject(v)
 		end
 	end
 end)
 
-function SpawnCoke()
-	while spawnedCoke < 25 do
+function Spawncoke1()
+	while spawnedcoke1 < 25 do
 		Citizen.Wait(0)
-		local cokeCoords = GenerateCokeCoords()
-		
-		ESX.Game.SpawnLocalObject('hei_prop_hei_drug_pack_01a', cokeCoords, function(obj)
+		local cokeCoords = GeneratecokeCoords1()
+		ESX.Game.SpawnLocalObject(Config.Model, vector3(cokeCoords.x, cokeCoords.y, Config.CircleZones.Zone1.coords.z), function(obj)
 			PlaceObjectOnGroundProperly(obj)
 			FreezeEntityPosition(obj, true)
-
-			table.insert(cokePlants, obj)
-			spawnedCoke = spawnedCoke + 1
+			table.insert(coke1, obj)
+			spawnedcoke1 = spawnedcoke1 + 1
 		end)
 	end
 end
 
-function ValidateCokeCoord(plantCoord)
-	if spawnedCoke > 0 then
+function ValidatecokeCoord1(plantCoord)
+	if spawnedcoke1 > 0 then
 		local validate = true
 
-		for k, v in pairs(cokePlants) do
+		for k, v in pairs(coke1) do
 			if GetDistanceBetweenCoords(plantCoord, GetEntityCoords(v), true) < 5 then
 				validate = false
 			end
 		end
 
-		if GetDistanceBetweenCoords(plantCoord, Config.CircleZones.CokeField.coords, false) > 50 then
+		if GetDistanceBetweenCoords(plantCoord, Config.CircleZones.Zone1.coords, false) > 50 then
 			validate = false
 		end
-		
+
 		return validate
 	else
 		return true
 	end
 end
 
-function GenerateCokeCoords()
+function GeneratecokeCoords1()
 	while true do
 		Citizen.Wait(1)
 
 		local cokeCoordX, cokeCoordY
 
 		math.randomseed(GetGameTimer())
-		local modX = math.random(-10, 10) --Distance Coke Zone
+		local modX = math.random(-10, 10)
 
 		Citizen.Wait(100)
 
 		math.randomseed(GetGameTimer())
-		local modY = math.random(-10, 10) --Distance Coke Zone
+		local modY = math.random(-10, 10)
 
-		cokeCoordX = Config.CircleZones.CokeField.coords.x + modX
-		cokeCoordY = Config.CircleZones.CokeField.coords.y + modY
-		local coord = vector3(cokeCoordX, cokeCoordY, Config.CircleZones.CokeField.coords.z)
+		cokeCoordX = Config.CircleZones.Zone1.coords.x + modX
+		cokeCoordY = Config.CircleZones.Zone1.coords.y + modY
 
-		if ValidateCokeCoord(coord) then
+		local coordZ = GetCoordZ(cokeCoordX, cokeCoordY)
+		local coord = vector3(cokeCoordX, cokeCoordY, coordZ)
+
+		if ValidatecokeCoord1(coord) then
 			return coord
 		end
 	end
 end
 
-
 function GetCoordZ(x, y)
 	local groundCheckHeights = { 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0, 48.0, 49.0, 50.0  }
-	
+
 	for i, height in ipairs(groundCheckHeights) do
 		local foundGround, z = GetGroundZFor_3dCoord(x, y, height)
+
 		if foundGround then
 			return z
 		end
 	end
-	
+
 	return 80
 end
-
-
 
